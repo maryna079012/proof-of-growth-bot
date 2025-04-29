@@ -8,31 +8,32 @@ const app = express();
 const port = process.env.PORT || 3000;
 const client = new WebClient(process.env.SLACK_BOT_TOKEN);
 
-// Важно: парсим JSON-тело
+// Важно: парсим JSON
 app.use(express.json());
 
-// 🟢 Обработка Slack Challenge
+// ✅ Обработка Slack Challenge
 app.post("/slack/events", (req, res) => {
-  try {
-    const body = req.body;
-    if (body && body.type === "url_verification") {
-      console.log("Challenge received:", body.challenge);
-      return res.status(200).send(body.challenge);
-    }
-    return res.status(200).send(); // для других событий
-  } catch (err) {
-    console.error("Error handling challenge:", err);
-    return res.status(500).send("Error");
+  const body = req.body;
+
+  if (body && body.type === "url_verification") {
+    const challenge = body.challenge;
+    console.log("Slack challenge received:", challenge);
+
+    // ВАЖНО: тип ответа — text/plain
+    res.setHeader("Content-Type", "text/plain");
+    return res.status(200).send(challenge);
   }
+
+  res.status(200).send("ok");
 });
 
-// 🟣 Обработка /checkin
+// ✅ Обработка /checkin
 app.post("/slack/commands", async (req, res) => {
-  if (req.body.command === "/checkin") {
-    const userId = req.body.user_id;
+  const { command, user_id } = req.body;
 
+  if (command === "/checkin") {
     await client.chat.postMessage({
-      channel: userId,
+      channel: user_id,
       text: "👋 It’s check-in time! Answer below 👇",
       blocks: [
         {
@@ -66,7 +67,7 @@ app.post("/slack/commands", async (req, res) => {
       ]
     });
 
-    return res.status(200).send();
+    return res.status(200).send(); // для Slack важно быстро ответить
   }
 
   res.status(200).send("Unknown command");
