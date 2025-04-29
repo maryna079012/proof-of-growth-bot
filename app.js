@@ -1,75 +1,74 @@
 import express from "express";
-import { App, ExpressReceiver } from "@slack/bolt";
+import { App } from "@slack/bolt";
 import dotenv from "dotenv";
 
-// Загружаем переменные из .env
 dotenv.config();
 
-// Настраиваем Express для URL Verification
 const expressApp = express();
 expressApp.use(express.json());
 
-expressApp.post("/slack/events", (req, res) => {
+// 🔐 Slack challenge for Event Subscription
+expressApp.post("/slack/events", (req, res, next) => {
   if (req.body.type === "url_verification") {
-    return res.send(req.body.challenge); // ⚡️ ВАЖНО: возвращаем challenge
+    return res.status(200).send(req.body.challenge);
+  } else {
+    next(); // Передаём дальше в Bolt
   }
 });
 
-// Настраиваем Bolt с кастомным Express
-const receiver = new ExpressReceiver({ signingSecret: process.env.SLACK_SIGNING_SECRET, app: expressApp });
-
+// 🔧 Инициализируем Bolt
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
   signingSecret: process.env.SLACK_SIGNING_SECRET,
-  socketMode: false,
   appToken: process.env.SLACK_APP_TOKEN,
-  receiver,
+  socketMode: false,
+  receiver: {
+    app: expressApp,
+  },
 });
 
-// 👉 Slash-команда /checkin
-app.command('/checkin', async ({ command, ack, client }) => {
+// 🟣 Slash команда /checkin
+app.command("/checkin", async ({ ack, command, client }) => {
   await ack();
 
-  const userId = command.user_id;
-
   await client.chat.postMessage({
-    channel: userId,
-    text: `🧘 Hey! It's time for your monthly check-in. Just reply below to each question. You’ve got this 💪`,
+    channel: command.user_id,
+    text: "👋 It’s check-in time! Answer below 👇",
     blocks: [
       {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: "*🧠 Let's reflect:*\n\n🔢 Score yourself (1️⃣–5️⃣) on each:\n– Autonomy\n– Clarity\n– Output quality\n– Speed\n– Collaboration"
+          text: "*🧠 Score yourself (1–5):*\n- Autonomy\n- Clarity\n- Output\n- Speed\n- Collaboration"
         }
       },
       {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: "🎯 *What's your biggest win or blocker this month?*"
+          text: "*🎯 Biggest win or blocker this month?*"
         }
       },
       {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: "🙌 *Who helped you this month? Shoutouts welcome!*"
+          text: "*🙌 Who helped you this month?*"
         }
       },
       {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: "📈 *What's your focus or growth goal for next month?*"
+          text: "*📈 Focus for next month?*"
         }
       }
     ]
   });
 });
 
-// Запускаем сервер
+// 🚀 Запуск сервера
 const PORT = process.env.PORT || 3000;
 expressApp.listen(PORT, () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
+  console.log(`🚀 App running on port ${PORT}`);
 });
