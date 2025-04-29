@@ -8,17 +8,25 @@ const app = express();
 const port = process.env.PORT || 3000;
 const client = new WebClient(process.env.SLACK_BOT_TOKEN);
 
+// Важно: парсим JSON-тело
 app.use(express.json());
 
-// ✅ Обрабатываем Slack challenge
+// 🟢 Обработка Slack Challenge
 app.post("/slack/events", (req, res) => {
-  if (req.body.type === "url_verification") {
-    return res.status(200).send(req.body.challenge);
+  try {
+    const body = req.body;
+    if (body && body.type === "url_verification") {
+      console.log("Challenge received:", body.challenge);
+      return res.status(200).send(body.challenge);
+    }
+    return res.status(200).send(); // для других событий
+  } catch (err) {
+    console.error("Error handling challenge:", err);
+    return res.status(500).send("Error");
   }
-  res.status(200).send(); // просто подтверждаем другие события
 });
 
-// ✅ Обрабатываем slash-команду /checkin
+// 🟣 Обработка /checkin
 app.post("/slack/commands", async (req, res) => {
   if (req.body.command === "/checkin") {
     const userId = req.body.user_id;
@@ -58,13 +66,13 @@ app.post("/slack/commands", async (req, res) => {
       ]
     });
 
-    return res.status(200).send(); // подтверждаем Slack, что команда обработана
+    return res.status(200).send();
   }
 
   res.status(200).send("Unknown command");
 });
 
-// 🚀 Стартуем сервер
+// 🚀 Запускаем сервер
 app.listen(port, () => {
   console.log(`✅ Server running on port ${port}`);
 });
