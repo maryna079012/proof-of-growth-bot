@@ -1,36 +1,21 @@
-import express from "express";
-import dotenv from "dotenv";
 import { WebClient } from "@slack/web-api";
 
-dotenv.config();
-
-const app = express();
-const port = process.env.PORT || 3000;
 const client = new WebClient(process.env.SLACK_BOT_TOKEN);
 
-// Важно: парсим JSON
-app.use(express.json());
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).send("Method Not Allowed");
+  }
 
-// ✅ Обработка Slack Challenge
-app.post("/slack/events", (req, res) => {
-  const body = req.body;
+  const { type, challenge, command, user_id } = req.body;
 
-  if (body && body.type === "url_verification") {
-    const challenge = body.challenge;
-    console.log("Slack challenge received:", challenge);
-
-    // ВАЖНО: тип ответа — text/plain
+  // Slack URL verification
+  if (type === "url_verification") {
     res.setHeader("Content-Type", "text/plain");
     return res.status(200).send(challenge);
   }
 
-  res.status(200).send("ok");
-});
-
-// ✅ Обработка /checkin
-app.post("/slack/commands", async (req, res) => {
-  const { command, user_id } = req.body;
-
+  // Slash command: /checkin
   if (command === "/checkin") {
     await client.chat.postMessage({
       channel: user_id,
@@ -67,13 +52,8 @@ app.post("/slack/commands", async (req, res) => {
       ]
     });
 
-    return res.status(200).send(); // для Slack важно быстро ответить
+    return res.status(200).send(); // Respond to Slack
   }
 
-  res.status(200).send("Unknown command");
-});
-
-// 🚀 Запускаем сервер
-app.listen(port, () => {
-  console.log(`✅ Server running on port ${port}`);
-});
+  return res.status(200).send("Event received");
+}
