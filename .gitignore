@@ -3,3 +3,5 @@
 .env*
 !.env.sample
 proof-of-growth-678a3d244fbe.json
+.vercel
+.env*.local
