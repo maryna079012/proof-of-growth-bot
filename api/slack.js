@@ -38,47 +38,55 @@ export default async function handler(req, res) {
     return res.status(200).send(challenge);
   }
 
-  // Slash command handler
+  // Slash command: /checkin
   if (command === "/checkin") {
-    await slack.chat.postMessage({
-      channel: user_id,
-      text: "👋 It’s check-in time! Answer below 👇",
-      blocks: [
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: "*🧠 Score yourself (1–5):*\n- Autonomy\n- Clarity\n- Output\n- Speed\n- Collaboration",
-          },
-        },
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: "*🎯 Biggest win or blocker this month?*",
-          },
-        },
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: "*🙌 Who helped you this month?*",
-          },
-        },
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: "*📈 Focus for next month?*",
-          },
-        },
-      ],
-    });
+    res.status(200).send(); // Respond fast to Slack to avoid dispatch_failed
 
-    return res.status(200).send();
+    try {
+      await slack.chat.postMessage({
+        channel: user_id,
+        text: "👋 It’s check-in time! Answer below 👇",
+        blocks: [
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: "*🧠 Score yourself (1–5):*\n- Autonomy\n- Clarity\n- Output\n- Speed\n- Collaboration",
+            },
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: "*🎯 Biggest win or blocker this month?*",
+            },
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: "*🙌 Who helped you this month?*",
+            },
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: "*📈 Focus for next month?*",
+            },
+          },
+        ],
+      });
+
+      console.log("✅ Slack message sent");
+    } catch (err) {
+      console.error("❌ Slack message failed", err);
+    }
+
+    return;
   }
 
-  // Handle DMs → write to Google Sheet
+  // Handle DM reply
   if (
     type === "event_callback" &&
     event &&
@@ -97,7 +105,11 @@ export default async function handler(req, res) {
       focus: "-",
     };
 
-    await writeToGoogleSheet({ user: `<@${user}>`, summary });
+    try {
+      await writeToGoogleSheet({ user: `<@${user}>`, summary });
+    } catch (err) {
+      console.error("❌ Ошибка при записи в Google Sheets:", err);
+    }
 
     return res.status(200).send();
   }
