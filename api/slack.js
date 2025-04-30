@@ -1,44 +1,38 @@
 import { WebClient } from "@slack/web-api";
-import { Client as NotionClient } from "@notionhq/client";
+import { google } from "googleapis";
+import { readFileSync } from "fs";
+import path from "path";
 
-// Инициализация Slack и Notion SDK
+// Slack SDK
 const slack = new WebClient(process.env.SLACK_BOT_TOKEN);
-const notion = new NotionClient({ auth: process.env.NOTION_TOKEN });
-const databaseId = "1e52f2293f318011ad90f250c778279b";
 
-// Функция записи в Notion
-async function addToNotion({ user, summary }) {
-  try {
-    console.log("📥 Отправляем в Notion:", user, summary);
+// Путь к JSON-файлу ключа сервисного аккаунта
+const CREDENTIALS_PATH = path.join(process.cwd(), "proof-of-growth-678a3d244fbe.json");
 
-    await notion.pages.create({
-      parent: { database_id: databaseId },
-      properties: {
-        Name: {
-          title: [{ text: { content: user } }],
-        },
-        Date: {
-          date: { start: new Date().toISOString().split("T")[0] },
-        },
-        Win: {
-          rich_text: [{ text: { content: summary.win || "-" } }],
-        },
-        Blocker: {
-          rich_text: [{ text: { content: summary.blocker || "-" } }],
-        },
-        Shoutout: {
-          rich_text: [{ text: { content: summary.shoutout || "-" } }],
-        },
-        Focus: {
-          rich_text: [{ text: { content: summary.focus || "-" } }],
-        },
-      },
-    });
+// Google Sheet ID и имя вкладки
+const SHEET_ID = "1ash2NiWYobB4dCnlxt_sEYSxE4LSQvkWA8FccSNy0SQ";
+const SHEET_NAME = "Sheet1";
 
-    console.log("✅ Успешно записано в Notion!");
-  } catch (err) {
-    console.error("❌ Ошибка при записи в Notion:", err.message);
-  }
+// Запись строки в Google Sheets
+async function writeToGoogleSheet({ user, summary }) {
+  const auth = new google.auth.GoogleAuth({
+    keyFile: CREDENTIALS_PATH,
+    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+  });
+
+  const sheets = google.sheets({ version: "v4", auth });
+  const now = new Date().toISOString();
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: SHEET_ID,
+    range: `${SHEET_NAME}!A1`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: {
+      values: [[now, user, summary.win, summary.blocker, summary.shoutout, summary.focus]],
+    },
+  });
+
+  console.log("✅ Данные добавлены в Google Sheets!");
 }
 
 export default async function handler(req, res) {
@@ -48,7 +42,7 @@ export default async function handler(req, res) {
 
   const { type, challenge, command, user_id, event } = req.body;
 
-  // Slack URL verification
+  // Slack challenge check
   if (type === "url_verification") {
     res.setHeader("Content-Type", "text/plain");
     return res.status(200).send(challenge);
@@ -94,7 +88,7 @@ export default async function handler(req, res) {
     return res.status(200).send();
   }
 
-  // Обработка личных сообщений
+  // Ответ пользователя в личку
   if (
     type === "event_callback" &&
     event &&
@@ -104,9 +98,8 @@ export default async function handler(req, res) {
     const user = event.user;
     const text = event.text;
 
-    console.log("💬 Получено личное сообщение:", text);
+    console.log("💬 Получен ответ:", user, text);
 
-    // Пока всё пишем в Win — позже будет AI summary
     const summary = {
       win: text,
       blocker: "-",
@@ -114,7 +107,7 @@ export default async function handler(req, res) {
       focus: "-",
     };
 
-    await addToNotion({ user: `<@${user}>`, summary });
+    await writeToGoogleSheet({ user: `<@${user}>`, summary });
 
     return res.status(200).send();
   }

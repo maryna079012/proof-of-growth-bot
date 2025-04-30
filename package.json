@@ -25,7 +25,8 @@
   "dependencies": {
     "@notionhq/client": "^2.3.0",
     "@slack/bolt": "^4.2.1",
-    "dotenv": "~16.4.7"
+    "dotenv": "~16.4.7",
+    "googleapis": "^148.0.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
