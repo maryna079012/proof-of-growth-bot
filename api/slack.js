@@ -6,7 +6,9 @@ const slack = new WebClient(process.env.SLACK_BOT_TOKEN);
 async function writeToGoogleSheet({ user, summary }) {
   const auth = new google.auth.JWT({
     email: process.env.GCP_CLIENT_EMAIL,
-    key: process.env.GCP_PRIVATE_KEY,
+    key: Buffer.from(process.env.GCP_PRIVATE_KEY_BASE64, "base64")
+  .toString("utf-8")
+  .replace(/\\n/g, "\n"),
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });
 
