@@ -2,6 +2,7 @@
   "name": "proof-of-growth-bot",
   "type": "module",
   "dependencies": {
-    "@slack/web-api": "^6.9.0"
+    "@slack/web-api": "^6.9.0",
+    "googleapis": "^148.0.0"
   }
 }
