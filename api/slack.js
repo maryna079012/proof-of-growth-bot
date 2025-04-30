@@ -1,13 +1,12 @@
 import { WebClient } from "@slack/web-api";
 import { google } from "googleapis";
 
-// Slack SDK
 const slack = new WebClient(process.env.SLACK_BOT_TOKEN);
 
-// Google Sheets через ENV-переменную (Vercel-safe)
 async function writeToGoogleSheet({ user, summary }) {
-  const auth = new google.auth.GoogleAuth({
-    credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT),
+  const auth = new google.auth.JWT({
+    email: process.env.GCP_CLIENT_EMAIL,
+    key: process.env.GCP_PRIVATE_KEY,
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });
 
@@ -33,13 +32,13 @@ export default async function handler(req, res) {
 
   const { type, challenge, command, user_id, event } = req.body;
 
-  // Slack verification
+  // Slack URL verification
   if (type === "url_verification") {
     res.setHeader("Content-Type", "text/plain");
     return res.status(200).send(challenge);
   }
 
-  // Команда /checkin
+  // Slash command handler
   if (command === "/checkin") {
     await slack.chat.postMessage({
       channel: user_id,
@@ -79,7 +78,7 @@ export default async function handler(req, res) {
     return res.status(200).send();
   }
 
-  // Ответы в личку → Google Sheets
+  // Handle DMs → write to Google Sheet
   if (
     type === "event_callback" &&
     event &&

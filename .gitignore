@@ -2,6 +2,6 @@
 .DS_Store
 .env*
 !.env.sample
-proof-of-growth-678a3d244fbe.json
+proof-of-growth-3644c4a26cfd.json
 .vercel
 .env*.local
