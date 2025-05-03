@@ -3,6 +3,7 @@ import { WebClient } from "@slack/web-api";
 import { google } from "googleapis";
 import { config } from "../config.js";
 
+
 const slack = new WebClient(process.env.SLACK_BOT_TOKEN);
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;
 
