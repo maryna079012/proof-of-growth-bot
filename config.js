@@ -1,4 +1,5 @@
-const config = {
+// config.js
+export const config = {
   individual: [
     { id: "score_drive", text: "Did I drive work forward and take responsibility for blockers?" },
     { id: "score_clarity", text: "Did I have clarity of what was expected of me?" },
@@ -11,20 +12,5 @@ const config = {
     { id: "growth", text: "🪴Where do I want to grow?" },
     { id: "goals", text: "🎯Goals for the next month." },
     { id: "shoutouts", text: "🙌🏽Who helped you this month? Peer kudos and shoutouts." }
-  ],
-
-  teamLead: [
-    { id: "score_autonomy", text: "Autonomy & Ownership" },
-    { id: "score_direction", text: "Clarity of Direction" },
-    { id: "score_quality", text: "Quality of Output (or Code Quality, if relevant)" },
-    { id: "score_speed", text: "Speed & Iteration" },
-    { id: "score_collab", text: "Collaboration & Support" },
-    { id: "score_impact", text: "Overall Impact" },
-    { id: "score_energy", text: "Energy & Presence" },
-    { id: "reflection", text: "🪞Reflection Box (anything you want to add to the scores above)" },
-    { id: "next_priority", text: "🎯 Next month’s priority (What they should prioritize / stretch into next month?)" },
-    { id: "private_note", text: "🧾 Private TL Note (optional)" }
   ]
 };
-
-export default config;
